@@ -4,6 +4,7 @@ import evaluate
 import numpy as np
 import xgboost as xgb
 params = {'booster': 'gbtree',
+             'class_weight': 'balanced',
               'objective': 'binary:logistic',
               'eval_metric': 'auc',
               'max_depth': 4,
@@ -15,13 +16,14 @@ params = {'booster': 'gbtree',
               'seed': 0,
               'nthread': 8,
               'silent': 1}
+
 def xgbtrain():
     loads = data_loads.Data_Load()
     x_train, x_test, y_train, y_test = loads.allinsplit()
     dtrain = xgb.DMatrix(x_train, label=y_train)
     dtrain.save_binary('train.buffer')
     watchlist = [(dtrain, 'train')]
-    bst = xgb.train(params, dtrain, num_boost_round=2000, evals=watchlist)
+    bst = xgb.train(params, dtrain, num_boost_round=1500, evals=watchlist)
 
     ypred = bst.predict(dtrain)
     # 设置阈值, 输出一些评价指标，选择概率大于0.5的为1，其他为0类
@@ -36,8 +38,27 @@ def xgbtrain():
     ypred = bst.predict(dtest)
     y_pred = (ypred >= 0.5) * 1
     evaluate.evaluate(y_test, y_pred)
-
     bst.save_model('xgb.model')
+
+
+def xgbtrain01():
+    loads = data_loads.Data_Load()
+    x_train, y_train = loads.all()
+    dtrain = xgb.DMatrix(x_train, label=y_train)
+    dtrain.save_binary('train.buffer')
+    watchlist = [(dtrain, 'train')]
+    bst = xgb.train(params, dtrain, num_boost_round=1200, evals=watchlist)
+
+    ypred = bst.predict(dtrain)
+    # 设置阈值, 输出一些评价指标，选择概率大于0.5的为1，其他为0类
+    y_pred = (ypred >= 0.5) * 1
+    print('-------train---------')
+    evaluate.evaluate(y_train, y_pred)
+    ypred = bst.predict(dtrain)
+    y_pred = (ypred >= 0.5) * 1
+    evaluate.evaluate(y_train, y_pred)
+    bst.save_model('xgb.model')
+
 def xgbtest():
     loads = data_loads.Data_Load()
     x,y = loads.all()
@@ -48,9 +69,21 @@ def xgbtest():
     y_pred = (ypred >= 0.5) * 1
     print('-------test---------')
     evaluate.evaluate(y,y_pred)
+def xgbpredict(x):
+    tar = xgb.Booster(model_file='xgb.model')
+    dtest = xgb.DMatrix(x)
+    predict = tar.predict(dtest)
+    predict = (predict >= 0.5) * 1
+    return predict
+def xgbpredictBatch(x):
+    tar = xgb.Booster(model_file='xgb.model')
+    dtest = xgb.DMatrix(x)
+    predict = tar.predict(dtest)
+    predict = (predict >= 0.5) * 1
+    return predict
 
-# xgbtrain()
-xgbtest()
+
+
 
 # def simply_evalue(true_labels,prediction_labels,classnum=2):
 #     dmatix = {}
@@ -65,3 +98,6 @@ xgbtest()
 #     for key in dmatix:
 #         print('类别%d正确率%f'%(key, dmatix[key]/realy[key]))
 # simply_evalue(y_train,y_pred)
+if __name__ == '__main__':
+    xgbtrain01()
+    # xgbtest()

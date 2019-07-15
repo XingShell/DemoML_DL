@@ -12,8 +12,8 @@ import evaluate
 
 
 class Data_Load(object):
-    def __init__(self):
-        self.num_topics = 50
+    def __init__(self,genNewVec=False):
+        self.num_topics = 30
         self.dim = self.num_topics
         self.num_classes = 2
         self.batch_size = 5000
@@ -26,7 +26,7 @@ class Data_Load(object):
         self.trainDataDir = './TrainData/'
         self.testDataDir = './TrainData/'
         self.saveVecName = '%s/DataVec'%self.trainDataDir  # 固定维度数据保存Name
-        self.genNewVec = False
+        self.genNewVec = genNewVec
         self.testsize = 0.25
         self.isSplit = True
         if self.genNewVec:
@@ -112,13 +112,13 @@ class Data_Load(object):
         tfidf = models.TfidfModel(corpus)
         lsi = models.LsiModel(tfidf[corpus], id2word=dictionary, num_topics=self.num_topics)
         # error??
-        # lsi.save(r'./model.lsi')
+        lsi.save(r'./model.lsi')
         # with open(self.saveVecName, 'w') as f:
         #     for index in range(len(corpus)):
         #         for elem in lsi[corpus[index]]:
         #             f.write(" "+str(elem[1]))
         #         f.write("\n")
-
+        index = similarities.MatrixSimilarity(lsi[corpus]).save(r'./lsi_model.index')
         with open(self.saveVecName, 'w') as f:
             for contract in corpus:
                 for elem in lsi[contract]:
@@ -190,7 +190,7 @@ class Data_Load(object):
 
 
 if __name__ == "__main__":
-    a = Data_Load()
+    a = Data_Load(True)
     x,y = a.next_batch(100)
     print(x[0])
     # a.genDataVec()
