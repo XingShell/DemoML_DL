@@ -7,7 +7,7 @@ from functools import reduce
 import jieba
 import re
 import os
-import evaluate
+from util import evaluate
 
 
 
@@ -23,8 +23,8 @@ class Data_Load(object):
         self.positive = 0 # the num of label is 1
         self.isLaborContract = True
         self.isInternshipContract = False
-        self.trainDataDir = './TrainData/'
-        self.testDataDir = './TrainData/'
+        self.trainDataDir = '../lib/'
+        self.testDataDir = self.trainDataDir
         self.saveVecName = '%s/DataVec'%self.trainDataDir  # 固定维度数据保存Name
         self.genNewVec = genNewVec
         self.testsize = 0.25
@@ -112,19 +112,13 @@ class Data_Load(object):
         tfidf = models.TfidfModel(corpus)
         lsi = models.LsiModel(tfidf[corpus], id2word=dictionary, num_topics=self.num_topics)
         # error??
-        lsi.save(r'./model.lsi')
-        # with open(self.saveVecName, 'w') as f:
-        #     for index in range(len(corpus)):
-        #         for elem in lsi[corpus[index]]:
-        #             f.write(" "+str(elem[1]))
-        #         f.write("\n")
-        index = similarities.MatrixSimilarity(lsi[corpus]).save(r'./lsi_model.index')
+        lsi.save(r'../lib/model.lsi')
+        index = similarities.MatrixSimilarity(lsi[corpus]).save(r'../lib/lsi_model.index')
         with open(self.saveVecName, 'w') as f:
             for contract in corpus:
                 for elem in lsi[contract]:
                     f.write(" "+str(elem[1]))
                 f.write('\n')
-
 
 
     def shuffle(self):
@@ -137,7 +131,6 @@ class Data_Load(object):
             self.labels = self.labels[permutation]
 
     def next_batch(self, batch_size, shuffle=True):
-
         start = self._index_in_epochs
         if self._epochs_completed == 0 and start == 0 and shuffle:
             self.shuffle()
@@ -181,6 +174,24 @@ class Data_Load(object):
                 self._index_in_epochs += batch_size
                 end = self._index_in_epochs
                 return self.data[start:end], self.labels[start:end]
+    def chooceall(self):
+        DataisOne = []
+        DataisZero = []
+        for index, y in enumerate(self.label):
+            if y == 1:
+                DataisOne.append(self.data[index])
+            else:
+                DataisZero.append(self.data[index])
+        permutation = np.random.permutation(len(DataisZero))
+        DataisZero = np.array(DataisZero)
+        DataisZero = DataisZero[permutation, :]
+        len1 = len(DataisOne)
+        # print(len1) # 663
+        x = np.concatenate((DataisZero[:int(1.3*len1)], np.array(DataisOne)), axis=0)
+        y = np.concatenate((np.zeros(int(1.3*len1)),np.ones(len(DataisOne))),axis=0)
+        return x,y
+
+
 
 
 
@@ -191,8 +202,10 @@ class Data_Load(object):
 
 if __name__ == "__main__":
     a = Data_Load(True)
-    x,y = a.next_batch(100)
-    print(x[0])
+    # a = Data_Load()
+    # x,y = a.chooceall()
+    # x,y = a.next_batch(100)
+    # print(x[0])
     # a.genDataVec()
     # train_x,train_y,test_x,test_y =
 

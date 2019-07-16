@@ -1,4 +1,9 @@
-Models/*
-modelsDNN/*
-__pycache__
-TrainData/*
+lib/
+RNN/modelsRNN/*
+SVM/Modelsave/
+MLP/modelsDNN
+*/__pycache__
+MLP/__init__.py
+*/__init__.py
+*/.idea/
+__init__.py

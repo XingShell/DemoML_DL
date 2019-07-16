@@ -4,13 +4,13 @@ import re
 import os
 import datetime
 import numpy as np
-import SVMDemo
-import xgboostDemo
+import DNNDemo
+
 
 
 
 label = []
-trainDataDir = 'TrainData'
+trainDataDir = '../lib/'
 #加载分类劳动合同标签库
 def load_label():
     path = '%s/标签库.txt'%trainDataDir
@@ -36,12 +36,12 @@ def loadstopword(path):
     return stop_word
 
 def jiebacut(path):
-    jieba.load_userdict(r'my_dict.txt')
+    jieba.load_userdict(r'%s/my_dict.txt'%trainDataDir)
     pattern = re.compile( '[\ue80b└└┌┐│┬\\t\\n\\s,.<>/?:;\'\"[\\]{}()\\|~!@#$%^&*\\-_=+a-zA-Z，。《》、？：；“”‘’｛｝【】（）…￥！—┄－\\d.．＿─]+')
     with open(path, 'r', encoding='utf-8') as f:
         strline = re.sub(pattern, '', f.read())
         words = jieba.lcut(strline)
-    stopword = loadstopword(r'stop_words.txt')
+    stopword = loadstopword(r'%s/stop_words.txt'%trainDataDir)
     words2 = [word for word in words if word not in stopword]
     return words2
 
@@ -58,8 +58,8 @@ class ClassifyContract(object):
             label = load_label()
         if classification==2:
             label = load_label_internships()
-        dictionary = corpora.Dictionary.load(r'./TrainData/contract.dict')
-        lsi = models.LsiModel.load(r'./model.lsi')
+        dictionary = corpora.Dictionary.load(r'./%s/contract.dict'%trainDataDir)
+        lsi = models.LsiModel.load(r'./%s/model.lsi'%trainDataDir)
         L = self.listAll(self.pathdir)
         if len(L)>500:
             L = L[:500]
@@ -87,45 +87,38 @@ class ClassifyContract(object):
 if __name__=='__main__':
     i=0
     classification = 1
-    path = r'../../test_data/测试_劳动合同/'
-    # path = r'../../test_data/测试_非劳动合同/'
+    path = r'../test_data/测试_劳动合同/'
     allnum = 0
     positive =0
     label = []
     # starttime = datetime.datetime.now()
     cc = ClassifyContract(None,path)
-    tem = cc.classifyBatch()
-    # a = xgboostDemo.xgbpredictBatch(tem)
-    a = SVMDemo.SVM().loadModelPredict(tem)
+    tem = np.array(cc.classifyBatch())
+    dnn = DNNDemo.DNNDemo()
+    a = dnn.predict(tem)
     for t in a:
         if t == 1:
             positive += 1
         allnum += 1
     print(positive/allnum)
-
-    endtime = datetime.datetime.now()
+    # endtime = datetime.datetime.now?()
     # print((endtime - starttime).seconds)
-
-
-
-    if classification == 1:
-        label = load_label()
-    if classification == 2:
-        label = load_label_internships()
-    exampleVec = cc.wordappend
-    index = similarities.MatrixSimilarity.load(r'./lsi_model.index')
-    ans = []
+    path = r'../test_data/测试_非劳动合同/'
     allnum = 0
-    positive = 0
-    for i in exampleVec:
-        sims = index[i]
-        sims2 = sorted(enumerate(sims), key=lambda item: item[1], reverse=True)[:1]
-        ans.append(label[sims2[0][0]])
-    for t in ans:
-        if t == 1:
-            positive += 1
+    negative = 0
+    label = []
+    # starttime = datetime.datetime.now()
+    c0 = ClassifyContract(None, path)
+    tem = np.array(c0.classifyBatch())
+    a = dnn.predict(tem)
+    for t in a:
+        if t == 0:
+            negative += 1
         allnum += 1
-    print(positive/allnum)
+    print(negative / allnum)
+
+
+
 
 
 
